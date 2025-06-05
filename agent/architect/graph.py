@@ -1,7 +1,7 @@
 import json
 from typing import List, TypedDict, Optional
 
-from langchain_anthropic import ChatAnthropic
+from llm_provider import llm_provider
 from langchain_core.messages import HumanMessage, AIMessage, AnyMessage
 from langchain_core.output_parsers import JsonOutputParser
 from langgraph.constants import END, START
@@ -35,14 +35,11 @@ conduct_research_prompt = markdown_to_prompt_template("agent/architect/prompts/c
 extract_implementation_prompt = markdown_to_prompt_template("agent/architect/prompts/extract_implementation_plan.md")
 
 # runnable
-plan_next_step_runnable = plan_next_step_prompt | ChatAnthropic(
-    model="claude-sonnet-4-20250514").with_structured_output(ResearchStep)
-check_research_runnable = check_research_prompt | ChatAnthropic(
-    model="claude-sonnet-4-20250514").with_structured_output(ResearchEvaluation)
-conduct_research_runnable = conduct_research_prompt | ChatAnthropic(model="claude-sonnet-4-20250514").bind_tools(
+plan_next_step_runnable = plan_next_step_prompt | llm_provider.get_llm().with_structured_output(ResearchStep)
+check_research_runnable = check_research_prompt | llm_provider.get_llm().with_structured_output(ResearchEvaluation)
+conduct_research_runnable = conduct_research_prompt | llm_provider.get_llm().bind_tools(
     search_tools + codemap_tools)
-extract_implementation_runnable = extract_implementation_prompt | ChatAnthropic(
-    model="claude-sonnet-4-20250514") | JsonOutputParser(pydantic_object=ImplementationPlan)
+extract_implementation_runnable = extract_implementation_prompt | llm_provider.get_llm() | JsonOutputParser(pydantic_object=ImplementationPlan)
 
 tool_node = ToolNode(codemap_tools + search_tools, messages_key="implementation_research_scratchpad")
 

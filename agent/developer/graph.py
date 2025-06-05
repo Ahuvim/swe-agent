@@ -3,33 +3,32 @@ import os
 import re
 from typing import List
 from diff_match_patch import diff_match_patch
-from langchain_anthropic import ChatAnthropic
+from llm_provider import llm_provider
 from langchain_core.messages import AnyMessage, AIMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 from langgraph.constants import END, START
-from langgraph.graph import  StateGraph
+from langgraph.graph import StateGraph
 from helpers.prompts import markdown_to_prompt_template
 from agent.developer.state import SoftwareDeveloperState, Diffs
 from langgraph.prebuilt import ToolNode
 from agent.tools.search import search_tools
 from agent.tools.codemap import codemap_tools
 from agent.tools.write import get_files_structure
-# Load the extract diff prompt
-extract_diffs_tasks_prompt = markdown_to_prompt_template("agent/developer/prompts/create_diff_prompt.md")
-implement_diffs_prompt = markdown_to_prompt_template("agent/developer/prompts/implement_diff.md")
+
+# Load prompts
+extract_diffs_tasks_prompt = markdown_to_prompt_template("agent/developer/prompts/extract_diffs_task.md")
+implement_diffs_prompt = markdown_to_prompt_template("agent/developer/prompts/implement_diffs.md")
 implement_new_file_prompt = markdown_to_prompt_template("agent/developer/prompts/implement_new_file.md")
-
-# Create the runnable with the prompt and model
-extract_diff_runnable = extract_diffs_tasks_prompt | ChatAnthropic(model="claude-sonnet-4-20250514") | StrOutputParser()
-edit_according_to_diff_runnable = implement_diffs_prompt | ChatAnthropic(model="claude-sonnet-4-20250514") | StrOutputParser()
-create_new_file_runnable = implement_new_file_prompt | ChatAnthropic(model="claude-sonnet-4-20250514") | StrOutputParser()
-
-# Load the get clear implementation plan prompt
 get_clear_implementation_plan_prompt = markdown_to_prompt_template("agent/developer/prompts/get_clear_implementation_plan.md")
 
-# Create the runnable with the prompt and model
-get_clear_implementation_plan_runnable = get_clear_implementation_plan_prompt | ChatAnthropic(model="claude-sonnet-4-20250514").bind_tools(search_tools+codemap_tools)
+# Create runnables with custom LLM provider
+extract_diff_runnable = extract_diffs_tasks_prompt | llm_provider.get_llm() | StrOutputParser()
+edit_according_to_diff_runnable = implement_diffs_prompt | llm_provider.get_llm() | StrOutputParser()
+create_new_file_runnable = implement_new_file_prompt | llm_provider.get_llm() | StrOutputParser()
+get_clear_implementation_plan_runnable = get_clear_implementation_plan_prompt | llm_provider.get_llm().bind_tools(search_tools+codemap_tools)
+
 dmp = diff_match_patch()
+
 def start_implementing(state: SoftwareDeveloperState):
     return {
         "current_task_idx": 0,
