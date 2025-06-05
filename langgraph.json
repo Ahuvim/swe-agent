@@ -1,9 +1,22 @@
 {
-    "dependencies": ["./agent"],
+    "dependencies": ["."],
     "graphs": {
-      "agent": "./agent/graph.py:swe_agent",
-      "architect": "./langgraph_debug.py:swe_architect",
-      "developer": "./langgraph_debug.py:swe_developer"
+      "architect": {
+        "path": "agent.architect.graph:swe_architect",
+        "description": "Software engineering research and planning agent"
+      },
+      "developer": {
+        "path": "agent.developer.graph:swe_developer", 
+        "description": "Software development and implementation agent"
+      },
+      "sql_analyst": {
+        "path": "agent.analyst.graph:sql_analyst",
+        "description": "SQL/Athena query analysis and optimization agent"
+      },
+      "swe_agent": {
+        "path": "agent.graph:swe_agent",
+        "description": "Main collaborative multi-agent system - Architect decides if SQL analysis and/or development is needed, then coordinates the work"
+      }
     },
     "env": ".env"
   }
